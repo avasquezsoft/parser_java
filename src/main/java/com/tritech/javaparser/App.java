@@ -11,6 +11,7 @@ import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import io.javalin.Javalin;
+import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.http.Context;
 
 import java.util.LinkedHashSet;
@@ -32,15 +33,14 @@ public class App {
 
         var app = Javalin.create(config -> {
 
-            // Configuración futura aquí
+            config.router.apiBuilder(() -> {
+                ApiBuilder.post("/parse", App::handleParse);
+                ApiBuilder.get("/health", ctx -> ctx.result("ok"));
+            });
 
         });
 
-        app.post("/parse", App::handleParse);
-
-        app.get("/health", ctx -> ctx.result("ok"));
-
-        app.start("0.0.0.0",8080);
+        app.start("0.0.0.0", 8080);
 
         System.out.println("[JavaParser] Servicio iniciado en puerto 8080");
     }
