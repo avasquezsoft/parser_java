@@ -11,7 +11,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.comments.JavadocComment;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 
@@ -63,15 +63,19 @@ public class App {
         root.set("entities", entities);
 
         javaParser.parse(source).getResult().ifPresent(cu -> {
-            // Extraer package
-            String packageName = cu.getPackageDeclaration().map(pd -> pd.getNameAsString()).orElse("");
-
             // Recorrer tipos (clases, interfaces, enums, records)
             for (TypeDeclaration<?> type : cu.findAll(TypeDeclaration.class)) {
                 if (type instanceof AnnotationDeclaration) continue;
 
                 ObjectNode entity = mapper.createObjectNode();
-                entity.put("type", type.isInterface() ? "Interface" : "Class");
+                
+                // Determinar si es interfaz (solo ClassOrInterfaceDeclaration tiene isInterface)
+                boolean isInterface = false;
+                if (type instanceof ClassOrInterfaceDeclaration) {
+                    isInterface = ((ClassOrInterfaceDeclaration) type).isInterface();
+                }
+                
+                entity.put("type", isInterface ? "Interface" : "Class");
                 entity.put("name", type.getNameAsString());
                 entity.put("file_path", filePath);
                 entity.put("start_line", type.getBegin().map(b -> b.line).orElse(0));
@@ -88,7 +92,7 @@ public class App {
 
                 ArrayNode relations = mapper.createArrayNode();
 
-                // Herencia (extends)
+                // Herencia (extends) / implementación — solo para ClassOrInterfaceDeclaration
                 if (type instanceof ClassOrInterfaceDeclaration cdecl) {
                     cdecl.getExtendedTypes().forEach(ext -> {
                         ObjectNode rel = createRelation("EXTENDS", ext.getNameAsString(), "Class");
@@ -139,9 +143,6 @@ public class App {
                 // Métodos
                 for (MethodDeclaration method : type.getMethods()) {
                     String methodName = method.getNameAsString();
-                    String params = method.getParameters().stream()
-                            .map(p -> p.getType() + " " + p.getName())
-                            .reduce((a, b) -> a + ", " + b).orElse("");
 
                     ObjectNode methodEntity = mapper.createObjectNode();
                     methodEntity.put("type", "Method");
@@ -227,8 +228,9 @@ public class App {
     }
 
     private static String extractJavadoc(Node node) {
-        if (node instanceof BodyDeclaration<?> bd && bd.getJavadoc().isPresent()) {
-            return bd.getJavadoc().get().toText();
+        Optional<JavadocComment> javadoc = node.getJavadocComment();
+        if (javadoc.isPresent()) {
+            return javadoc.get().getContent();
         }
         return "";
     }
