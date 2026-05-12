@@ -11,7 +11,6 @@ import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import io.javalin.Javalin;
-import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.http.Context;
 
 import java.util.LinkedHashSet;
@@ -33,10 +32,8 @@ public class App {
 
         var app = Javalin.create(config -> {
 
-            config.router.apiBuilder(() -> {
-                ApiBuilder.post("/parse", App::handleParse);
-                ApiBuilder.get("/health", ctx -> ctx.result("ok"));
-            });
+            config.routes.post("/parse", App::handleParse);
+            config.routes.get("/health", ctx -> ctx.result("ok"));
 
         });
 
