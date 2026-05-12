@@ -30,13 +30,17 @@ public class App {
 
     public static void main(String[] args) {
 
-        Javalin app = Javalin.create(config -> {
-            config.showJavalinBanner = false;
-        }).start(8080);
+        var app = Javalin.create(config -> {
+
+            // Configuración futura aquí
+
+        });
 
         app.post("/parse", App::handleParse);
 
         app.get("/health", ctx -> ctx.result("ok"));
+
+        app.start("0.0.0.0",8080);
 
         System.out.println("[JavaParser] Servicio iniciado en puerto 8080");
     }
