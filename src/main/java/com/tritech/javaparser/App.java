@@ -228,9 +228,18 @@ public class App {
     }
 
     private static String extractJavadoc(BodyDeclaration<?> node) {
-        return node.getJavadocComment()
-                .map(JavadocComment::parse)
-                .map(j -> j.getDescription().toText())
-                .orElse("");
+
+        if (node.getComment().isPresent()
+                && node.getComment().get() instanceof JavadocComment) {
+
+            JavadocComment javadoc =
+                    (JavadocComment) node.getComment().get();
+
+            return javadoc.parse()
+                    .getDescription()
+                    .toText();
+        }
+
+        return "";
     }
 }
